@@ -6,3 +6,9 @@ A jammer
 - macOS
 - Ubuntu
 
+Setup:
+
+```
+pip install -r requirements.txt
+sh magenta_install.sh
+```
