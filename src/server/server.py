@@ -7,6 +7,7 @@ import socket
 class MessageServer(object):
     def __init__(self, ip_address='localhost', port=8088):
         self.port = port
+        self.ip_address = ip_address
         self.num_connections = 5
         self.byte_limit = 1024
 
@@ -21,10 +22,10 @@ class MessageServer(object):
         connection, address = self.serversocket.accept()
         buf = connection.recv(self.byte_limit)
         return buf
-    
+
     def receive(self):
         buf = self.read_buffer()
-        
+
         if len(buf) > 0:
             return buf
             # break
