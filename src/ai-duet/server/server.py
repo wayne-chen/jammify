@@ -15,8 +15,8 @@
 # 
 
 from predict import generate_midi
+from read_midi import ReadMidi
 import threading
-from socket_server import MessageServer
 import pdb
 import os
 from flask import send_file, request
@@ -26,6 +26,7 @@ if sys.version_info.major <= 2:
     from cStringIO import StringIO
 else:
     from io import StringIO
+from time import sleep
 import time
 import json
 
@@ -50,32 +51,31 @@ class processThread(threading.Thread):
 
         if len(midi_data.instruments) > 0:
             for midi_note in midi_data.instruments[0].notes:
+                threadLock.acquire()
                 app.ai_midis.append({
                     "pitch": midi_note.pitch,
                     "velocity": midi_note.velocity
                 })
-        # Free lock to release next thread
+                threadLock.release()
+
+class midiThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.reader = ReadMidi(port=0)
+
+    def run(self):
+        while True:
+            message = self.reader.get_message()
+            if message:
+                threadLock.acquire()
+                # print message
+                app.human_midis.append(message)
+                threadLock.release()
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    app.predict_count += 1
-    now = time.time()
     values = json.loads(request.data)
     midi_data = pretty_midi.PrettyMIDI(StringIO(''.join(chr(v) for v in values)))
-    end = time.time()
-    print "TIMER midi parse: request {}, total {}, start {}, end {}".format(app.predict_count, now-end, now, end)
-
-    now = time.time()
-    if len(midi_data.instruments) > 0:
-        arr = []
-        for midi_note in midi_data.instruments[0].notes:
-            arr.append({
-                "pitch": midi_note.pitch,
-                "velocity": midi_note.velocity
-            })
-        app.human_midis.extend(arr)
-    end = time.time()
-    print "TIMER append array: request {}, start {}, end {}".format(app.predict_count, now-end, now, end)
 
     duration = float(request.args.get('duration'))
     newThread = processThread(midi_data, duration)
@@ -85,9 +85,11 @@ def predict():
 
 @app.route('/midi_data', methods=['GET'])
 def midi_data():
+    threadLock.acquire()
     midi_data = json.dumps(dict(human_midi=app.human_midis, ai_midi=app.ai_midis))
     app.human_midis = []
     app.ai_midis = []
+    threadLock.release()
     return midi_data
 
 @app.route('/', methods=['GET', 'POST'])
@@ -96,6 +98,8 @@ def index():
 
 
 if __name__ == '__main__':
+    midi_process = midiThread()
+    midi_process.start()
     # other IP 169.254.213.200
     # 192.168.17.174
     app.run(host='169.254.213.200', port=50007)
