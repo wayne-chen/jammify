@@ -6,13 +6,15 @@ from client import MessageClient
 class Midi(object):
     def __init__(self):
 
-        self.client = MessageClient(ip_address='localhost', port=8089)
-
+        # client = MessageClient(ip_address='localhost', port=8088)
         inputs = mido.get_input_names()
         with mido.open_input(inputs[1]) as inport:
             for msg in inport:
-                self.client.send(message=json.dumps({"yo": "test"}))
+                # json.loads("m")
+                client = MessageClient(ip_address='localhost', port=8088)
+                client.send(message=str(msg))
                 print msg
+
 
 def main():
     Midi()
