@@ -5,12 +5,13 @@ import socket
 
 
 class MessageServer(object):
-    def __init__(self, ip_address='localhost', port=8089):
+    def __init__(self, ip_address='localhost', port=8088):
         self.port = port
         self.num_connections = 5
         self.byte_limit = 1024
 
         self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.serversocket.bind((ip_address, port))
 
         # Start listening with N connections
@@ -31,14 +32,18 @@ class MessageServer(object):
             print 'Error buf length:', len(buf)
             return None
 
+    def __del__(self):
+        self.serversocket.close()
+
 
 def main():
-    server = MessageServer(ip_address='localhost', port=8089)
-    message = server.receive()
+    server = MessageServer(ip_address='localhost', port=8088)
+    while True:
+        # server = MessageServer(ip_address='localhost', port=8088)
+        message = server.receive()
 
-    # print message
-    message = json.loads(message)
-    print message['a']
+        print message
+    # message = json.loads(message)
 
 if __name__ == '__main__':
     main()
