@@ -28,7 +28,7 @@ class MessageClient(object):
 
 def main():
     while True:
-        client = MessageClient(ip_address='localhost', port=8088)
+        client = MessageClient(ip_address='192.168.17.174', port=50007)
         data = client.receive()
         if data is None:
             continue

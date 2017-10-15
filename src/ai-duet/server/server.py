@@ -15,7 +15,7 @@
 # 
 
 from predict import generate_midi
-from socket_client import MessageClient
+from socket_server import MessageServer
 import pdb
 import os
 from flask import send_file, request
@@ -30,6 +30,7 @@ import json
 
 from flask import Flask
 app = Flask(__name__, static_url_path='', static_folder=os.path.abspath('../static'))
+app.all_the_midis = []
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -49,13 +50,17 @@ def predict():
             "velocity": midi_note.velocity
         })
 
-    ios_client = MessageClient(ip_address='localhost', port=8088)
-    ios_client.send(json.dumps(midi_notes))
+    app.all_the_midis.extend(midi_notes)
 
 
     return send_file(ret_midi, attachment_filename='return.mid',
         mimetype='audio/midi', as_attachment=True)
 
+@app.route('/midi_data', methods=['GET'])
+def midi_data():
+    midi_data = json.dumps(app.all_the_midis)
+    app.all_the_midis = []
+    return midi_data
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -63,4 +68,4 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8090)
+    app.run(host='169.254.213.200', port=50007)
