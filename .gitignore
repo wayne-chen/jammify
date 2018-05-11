@@ -3,3 +3,4 @@
 .vscode
 node_python/
 venv/
+./*DS_Store
